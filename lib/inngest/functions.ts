@@ -1,9 +1,10 @@
 import { inngest } from "@/lib/inngest/client";
 import { PERSONALIZED_WELCOME_EMAIL_PROMPT } from "@/lib/inngest/prompt";
+import { sendWelcomeEmail } from "@/lib/nodemailer";
 
 export const sendSignUpEmail = inngest.createFunction(
   { id: "sign-up-email" },
-  { event: "sign-up" },
+  { event: "app/user.created" },
   async ({ event, step }) => {
     const userProfile = `
       - Country: ${event.data.country}
@@ -31,8 +32,15 @@ export const sendSignUpEmail = inngest.createFunction(
       const part = response.candidates?.[0]?.content?.parts?.[0];
       const introText =
         (part && "text" in part ? part.text : null) ||
-        "Thanks for Joining signalist. You now have the tools to track markets and make smart moves.";
-      // Email SENDING LOGIC
+        "Thanks for Joining signalist. You now have the tools to track markets and make smarter moves.";
+      const {
+        data: { email, name },
+      } = event;
+      return await sendWelcomeEmail({
+        email,
+        name,
+        intro: introText,
+      });
     });
 
     return {
